@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DynamicLoader", "DynamicLoader\DynamicLoader.csproj", "{74D3FD86-A730-4D67-BBC2-8DFE0E4DB79A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestPlugin", "TestPlugin\TestPlugin.csproj", "{708FF586-9D41-4683-9936-5A594D67D8AD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{74D3FD86-A730-4D67-BBC2-8DFE0E4DB79A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74D3FD86-A730-4D67-BBC2-8DFE0E4DB79A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74D3FD86-A730-4D67-BBC2-8DFE0E4DB79A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74D3FD86-A730-4D67-BBC2-8DFE0E4DB79A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{708FF586-9D41-4683-9936-5A594D67D8AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{708FF586-9D41-4683-9936-5A594D67D8AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{708FF586-9D41-4683-9936-5A594D67D8AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{708FF586-9D41-4683-9936-5A594D67D8AD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6F845FDE-E0CC-45B0-AD9D-8E2873362232}
+	EndGlobalSection
+EndGlobal
