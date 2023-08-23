@@ -5,6 +5,7 @@ using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using DynamicLoader.LoadContext;
 using DynamicLoader.Compiler;
+using DynamicLoader.Windows;
 using HarmonyLib;
 
 namespace DynamicLoader;
@@ -19,6 +20,8 @@ public class Plugin : BasePlugin
         var searchPaths = new List<string>(Directory.GetFiles(
             Paths.PluginPath, "*.cs", SearchOption.TopDirectoryOnly));
         searchPaths.AddRange(Directory.GetDirectories(Paths.PluginPath));
+        var links = Directory.GetFiles(Paths.PluginPath, "*.lnk", SearchOption.TopDirectoryOnly);
+        searchPaths.AddRange(Link.Resolve(links));
 
         Log.LogInfo($"Searching\n\t{string.Join("\n\t", searchPaths)}");
 
