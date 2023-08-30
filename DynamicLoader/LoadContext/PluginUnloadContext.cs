@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 using BepInEx;
 using BepInEx.Logging;
@@ -24,6 +25,12 @@ public class PluginUnloadContext
             return;
 
         Log.LogInfo($"Processing {UnloadingContexts.Count} unloading and {OrphanedContexts.Count} orphaned contexts");
+
+        UnloadingStopwatch.Restart();
+        Il2CppSystem.GC.Collect();
+        Il2CppSystem.GC.InternalCollect(Il2CppSystem.GC.MaxGeneration);
+        UnloadingStopwatch.Stop();
+        Log.LogInfo(FormattableString.Invariant($"Internal garbage collecting took {UnloadingStopwatch.Elapsed.TotalSeconds:0.###}s"));
 
         UnloadingStopwatch.Restart();
         GC.Collect();
@@ -79,11 +86,11 @@ public class PluginUnloadContext
         return UnloadingContexts.Values.Any(ctx => ctx.AssemblyName == assName);
     }
 
-    public static void Create(PluginInfo info, string assName, WeakReference<AssemblyLoadContext> ctxRef)
+    public static void Create(PluginInfo info, string assName, WeakReference<AssemblyLoadContext> ctxRef, List<GCHandle> gcHandles)
     {
         if (Exists(info))
             throw new InvalidOperationException($"{info.Metadata.GUID} already exists in dict");
-        var ctx = new PluginUnloadContext(info, assName, ctxRef);
+        var ctx = new PluginUnloadContext(info, assName, ctxRef, gcHandles);
         UnloadingContexts.Add(ctx.Key, ctx);
     }
 
@@ -105,12 +112,14 @@ public class PluginUnloadContext
     public readonly KeyType Key;
 
     private readonly WeakReference<AssemblyLoadContext> ctxRef;
+    private readonly List<GCHandle> gcHandles;
 
-    private PluginUnloadContext(PluginInfo info, string assName, WeakReference<AssemblyLoadContext> ctxRef)
+    private PluginUnloadContext(PluginInfo info, string assName, WeakReference<AssemblyLoadContext> ctxRef, List<GCHandle> gcHandles)
     {
         PluginInfo = info;
         AssemblyName = assName;
         this.ctxRef = ctxRef;
+        this.gcHandles = gcHandles;
         Key = new(PluginInfo.Metadata.GUID, UnloadStart);
     }
 
@@ -125,8 +134,26 @@ public class PluginUnloadContext
             return true;
         }
 
-        if (incGC)
-            GCs++;
+        if (!incGC)
+            return false;
+        GCs++;
+
+        if (gcHandles.Count == 0)
+            return false;
+
+        var handle = gcHandles[gcHandles.Count - 1];
+        gcHandles.RemoveAt(gcHandles.Count - 1);
+        if (!handle.IsAllocated)
+            return false;
+
+        // TODO Free multiple handles at once.
+        // Some order/batching is needed, e.g. the finalizer can't be freed before
+        // Il2CppSystem.GC has invoked it.
+        /// <see cref="Il2CppInterop.Runtime.Injection.ClassInjector.Finalize"/>
+        /// <see cref="Il2CppInterop.Runtime.Injection.ClassInjector.ProcessNewObject"/>
+        /// <see cref="Il2CppInterop.Runtime.Injection.ClassInjector.AssignGcHandle"/>
+        Log.LogWarning($"Freeing handle {handle.Target}");
+        handle.Free();
         return false;
     }
 

@@ -16,10 +16,20 @@
     <RootNamespace>TestPlugin</RootNamespace>
 
     <BepInExPluginGuid>me.fistme.dave.testplugin</BepInExPluginGuid>
+    <BepInExPath>$(MSBuildProgramFiles32)\Steam\steamapps\common\Dave the Diver\BepInEx</BepInExPath>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.*" IncludeAssets="compile" />
     <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(BepInExPath)\interop\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="Il2Cppmscorlib">
+      <HintPath>$(BepInExPath)\interop\Il2Cppmscorlib.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>

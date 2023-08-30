@@ -8,6 +8,7 @@ using System.Runtime.Loader;
 using BepInEx;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
+using DynamicLoader.Unloader;
 using HarmonyLib;
 
 namespace DynamicLoader.LoadContext;
@@ -86,6 +87,7 @@ public class PluginLoadContext : IDisposable
     private MemoryStream assemblyStream, symbolsStream;
     private AssemblyLoadContext ctx;
     private Assembly assembly;
+    private List<GCHandle> gcHandles = new();
 
     private PluginLoadContext(PluginInfo info, string assName, MemoryStream assemblyStream, MemoryStream symbolsStream = null)
     {
@@ -110,6 +112,7 @@ public class PluginLoadContext : IDisposable
 
         Log.LogInfo($"Loading plugin {PluginInfo.Metadata.Name} ({PluginInfo.Metadata.Version})");
         LoadState = LoadStates.LOADING;
+        LoadPatches.OnAlloc += GCHandle_OnAlloc;
         try
         {
             LoadPlugins(new List<PluginInfo>() { PluginInfo });
@@ -117,6 +120,10 @@ public class PluginLoadContext : IDisposable
         catch
         {
             ctx?.Unload();
+        }
+        finally
+        {
+            LoadPatches.OnAlloc -= GCHandle_OnAlloc;
         }
 
         if (LoadState != LoadStates.LOADED)
@@ -134,6 +141,13 @@ public class PluginLoadContext : IDisposable
         }
 
         return PluginInfo.Instance is BasePlugin;
+    }
+
+    private void GCHandle_OnAlloc(object sender, (string source, object value, GCHandleType type, GCHandle result) e)
+    {
+        // TODO Check StackFrame to ensure we're only yanking il2cpp handles
+        Log.LogInfo($"Intercepted {e.source}({e.value}, {e.type})");
+        gcHandles.Add(e.result);
     }
 
     public Assembly GetPluginAssembly(string assemblyFile)
@@ -174,11 +188,7 @@ public class PluginLoadContext : IDisposable
         assemblyStream = symbolsStream = null;
         ContextsByLocation.Remove(PluginInfo.Location);
 
-        PluginUnloadContext.Create(PluginInfo, AssemblyName, new (ctx));
-
-        // Release references to the context, important for the GC to actually unload us
-        assembly = null;
-        ctx = null;
+        PluginUnloadContext.Create(PluginInfo, AssemblyName, new (ctx), gcHandles);
 
         if (PluginInfo.Instance is BasePlugin plugin)
         {
@@ -194,6 +204,14 @@ public class PluginLoadContext : IDisposable
                     + $"{nameof(AssemblyLoadContext)} might not unload properly\n{ex.ToString()}");
             }
         }
+
+        ClassInjectorUnloader.UnloadInjectedTypes(ctx);
+        ClassInjectorUnloader.UnloadInflatedMethods(ctx);
+        InjectorHelpersUnloader.UnloadClassNameLookup(ctx);
+
+        // Release references to the context, important for the GC to actually unload us
+        assembly = null;
+        ctx = null;
 
         Traverse.Create(PluginInfo).Property<object>(nameof(PluginInfo.Instance)).Value = null;
         IL2CPPChainloader.Instance.Plugins.Remove(PluginInfo.Metadata.GUID);
