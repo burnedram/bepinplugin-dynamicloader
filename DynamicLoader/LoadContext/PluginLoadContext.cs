@@ -208,6 +208,8 @@ public class PluginLoadContext : IDisposable
         ClassInjectorUnloader.UnloadInjectedTypes(ctx);
         ClassInjectorUnloader.UnloadInflatedMethods(ctx);
         InjectorHelpersUnloader.UnloadClassNameLookup(ctx);
+        UnityExplorerUnloader.UnloadConsoleReferences(ctx);
+        UniverseLibUnloader.UnloadReflectionUtility(ctx);
 
         // Release references to the context, important for the GC to actually unload us
         assembly = null;
