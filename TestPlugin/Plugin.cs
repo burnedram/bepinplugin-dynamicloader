@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
+using HarmonyLib;
 using UnityEngine;
 
 namespace TestPlugin;
@@ -15,7 +16,7 @@ public class Plugin : BasePlugin
     {
         Log = base.Log;
         behaviour = AddComponent<PluginBehaviour>();
-        Log.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
+        Log.LogInfo($"Plugin {Traverse.Create(typeof(MyPluginInfo)).Field<string>(nameof(MyPluginInfo.PLUGIN_GUID)).Value} is loaded!");
     }
 
     public override bool Unload()
